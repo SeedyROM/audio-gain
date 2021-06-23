@@ -1,0 +1,10 @@
+{
+  "clang-tidy.compilerArgs": [
+    "-L../portsf/portsf", 
+    "-I../portsf/include"
+  ],
+  "cSpell.words": [
+    "chans",
+    "srate"
+  ]
+}
