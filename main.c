@@ -19,7 +19,7 @@
 
 // ====================================================================================
 
-size_t FRAME_BUFFER_SIZE = 128; 
+size_t FRAME_BUFFER_SIZE = 2 << 12; 
 
 // ====================================================================================
 // Declarations
@@ -120,9 +120,8 @@ int main(int argc, char *argv[]) {
 
     // Print audio file info
     if(debug) {
+        printf("\n====== INPUT ======\n");
         audio_file_info(audio_file);
-        printf("Adjusted Gain: %f\n", gain);
-        printf("Output file: %s\n", outfile);
     }
 
     // Open a new file
@@ -133,27 +132,43 @@ int main(int argc, char *argv[]) {
 
 
     // Prepare to process the audio data
-    float *frame = malloc(audio_file->properties.chans * sizeof(float));
-    long total_frames = 0;
+    float *frame = malloc(FRAME_BUFFER_SIZE * audio_file->properties.chans * sizeof(float));
+    long frames_read = 0, total_frames = 0;
 
     // Read each frame
-    while(psf_sndReadFloatFrames(audio_file->file, frame, 1) == 1) {
+    while((frames_read = psf_sndReadFloatFrames(audio_file->file, frame, FRAME_BUFFER_SIZE)) > 0) {
         total_frames++;
 
+        // Calculate the amount of frames to process
+        int block_size = frames_read * audio_file->properties.chans;
+
         // For each channel of the frame
-        for(int i = 0; i < audio_file->properties.chans; i++) {
+        for(int i = 0; i < block_size; i++) {
             // TODO: Process here
             frame[i] *= gain;
         }
 
         // Write our frames to the output file
-        if(psf_sndWriteFloatFrames(audio_file_out->file, frame, 1) != 1) {
+        if(psf_sndWriteFloatFrames(audio_file_out->file, frame, frames_read) != frames_read) {
             printf("Failed to write to outfile %s\n", outfile);
             break;
         }
     }
 
     free(frame);
+
+    // Debug info about the outfile
+    if(debug) {
+        printf("\n====== OUTPUT ======\n");
+
+        audio_file_info(audio_file_out);
+
+        printf("\n====== PROCESSED DATA INFO ======\n");
+        printf("Buffer Size:   %ld\n", FRAME_BUFFER_SIZE);
+        printf("Total Blocks:  %ld\n", total_frames);
+        printf("Total Frames:  %ld\n", total_frames * FRAME_BUFFER_SIZE);
+        printf("Total Samples: %ld bytes\n\n", total_frames * FRAME_BUFFER_SIZE * audio_file_out->properties.chans * sizeof(float));
+    }
 
     // Close the files
     if(audio_file_free(audio_file) != 0) {
@@ -200,6 +215,13 @@ struct audio_file *audio_file_open(const char *infile) {
     return audio_file;
 }
 
+/**
+ * @brief Create an audio file from an existing one to process
+ * 
+ * @param audio_file_in 
+ * @param outfile 
+ * @return struct audio_file* 
+ */
 struct audio_file *audio_file_create(struct audio_file *audio_file_in, const char *outfile) {
     // Create the audio file struct
     struct audio_file *audio_file = malloc(sizeof(struct audio_file));
