@@ -8,8 +8,12 @@
       "program": "${workspaceFolder}/bin/audio-gain",
       "preLaunchTask": "Build",
       "args": [
-        "-f ../wav-files/tengo.wav",
-        "-g 0.88"
+        "-i", 
+        "../wav-files/tengo.wav",
+        "-o", 
+        "./test.wav",
+        "-g",
+        "0.88"
       ],
       "cwd": "${workspaceFolder}"
     }
