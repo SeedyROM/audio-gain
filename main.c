@@ -19,7 +19,7 @@
 
 // ====================================================================================
 
-size_t FRAME_BUFFER_SIZE = 2 << 12; 
+size_t FRAME_BUFFER_SIZE = 2 << 12; // 8192
 
 // ====================================================================================
 // Declarations
@@ -69,16 +69,13 @@ int main(int argc, char *argv[]) {
     // ==================================
     // Notes about getopt:
     // ==================================
-    // getopt flags are delineated by :
-    // Things below no longer make sense...
-    // first is required
-    // second is optional
-    // third is something?? // TODO: figure this out
+    // getopt flags are delineated by : 
+    // if and only if they require a value to be present
     // ==================================
 
     // Parse command line arguments with ancient MAGIC
     char flag; // Current flag for the option parsing
-    while ((flag = getopt(argc, argv, "i:o:g:d")) != -1) {
+    while ((flag = getopt(argc, argv, "i:o:g:b:d")) != -1) {
         switch(flag) {
             case 'i':
                 infile = optarg;
@@ -86,13 +83,18 @@ int main(int argc, char *argv[]) {
             case 'o':
                 outfile = optarg;
                 break;
-            case 'd':
-                debug = true;
-                break;
             case 'g':
                 if(optarg) { // How to handle an optional field postfix'd with :
                     gain = atof(optarg);
                 }
+                break;
+            case 'b':
+                if(optarg) {
+                    FRAME_BUFFER_SIZE = atol(optarg);
+                }
+                break;
+            case 'd':
+                debug = true;
                 break;
             case '?':
                 printf("Invalid flag: %s\n", optarg);
@@ -101,6 +103,7 @@ int main(int argc, char *argv[]) {
         }
     }
     
+    // Verify required flags are set
     if(!infile) {
         printf("No file to load specified, use the -i flag\n");
         usage();
@@ -120,6 +123,8 @@ int main(int argc, char *argv[]) {
 
     // Print audio file info
     if(debug) {
+        printf("\n====== SETTINGS ======\n");
+        printf("Buffer Size:   %ld\n", FRAME_BUFFER_SIZE);
         printf("\n====== INPUT ======\n");
         audio_file_info(audio_file);
     }
@@ -155,6 +160,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    // Free our buffer pointer
     free(frame);
 
     // Debug info about the outfile
@@ -163,8 +169,7 @@ int main(int argc, char *argv[]) {
 
         audio_file_info(audio_file_out);
 
-        printf("\n====== PROCESSED DATA INFO ======\n");
-        printf("Buffer Size:   %ld\n", FRAME_BUFFER_SIZE);
+        printf("\n====== PROCESSED ======\n");
         printf("Total Blocks:  %ld\n", total_frames);
         printf("Total Frames:  %ld\n", total_frames * FRAME_BUFFER_SIZE);
         printf("Total Samples: %ld bytes\n\n", total_frames * FRAME_BUFFER_SIZE * audio_file_out->properties.chans * sizeof(float));
@@ -238,7 +243,7 @@ struct audio_file *audio_file_create(struct audio_file *audio_file_in, const cha
         goto fail;
     }
 
-    audio_file->file = psf_sndCreate("./test.wav", &audio_file->properties, 0, 0, PSF_CREATE_RDWR); // Create a sound file
+    audio_file->file = psf_sndCreate(outfile, &audio_file->properties, 0, 0, PSF_CREATE_RDWR); // Create a sound file
     if(audio_file->file < 0) {
         printf("Cannot create file: %s\n", outfile);
         goto fail;
