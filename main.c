@@ -55,6 +55,11 @@ void  process_signal (struct audio_file *audio_file);
  * @return int 
  */
 int main(int argc, char *argv[]) {
+    if(argc == 1) {
+        usage();
+        return 1;
+    }
+
     // PortSF initialization
     if(psf_init()) {
         printf("Failed to start portsf...");
@@ -282,7 +287,7 @@ static inline int audio_file_free(struct audio_file *audio_file) {
 // ====================================================================================
 
 static void usage() {
-    printf("audio-gain -f <FILE_NAME> [-g <GAIN> | -d <DEBUG> ]\n");
+    printf("audio-gain -i <INPUT_FILE> -o <OUTPUT_FILE> [-g <GAIN> | -d <DEBUG> | -b <BUFFER_SIZE>]\n");
 }
 
 // ====================================================================================
