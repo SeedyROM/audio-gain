@@ -1,4 +1,4 @@
-# audio-gain
+# :sound: audio-gain
 
 ## Installation
 
